@@ -5,15 +5,15 @@ steps_list = [8, 16, 32, 64]
 
 # main shader programs
 maincode = <<'SHADERCODE'
-Shader "Unlit/Surface Riser/{{steps}} steps"
+Shader "Unlit/Surface Riser/Phong ({{steps}} steps)"
 {
   Properties
   {
     _Bevel ("Bevel Scale", Range(0, 1)) = 0.1
-    _Color ("Override Color", Color) = (1,1,1,0)
+    _Color ("Diffuse Color", Color) = (1,1,1,0)
     _Spec ("Specular Color", Color) = (1,1,1,1)
-    _SpecLevel ("Specular Level", Float) = 5
-    _Emit ("Emitter Color", Color) = (0,0,0,1)
+    _SpecLevel ("Specular Shininess", Float) = 5
+    _Emit ("Ambient Color", Color) = (0,0,0,1)
     _MainTex ("Texture", 2D) = "white" {}
   }
   SubShader
@@ -63,17 +63,15 @@ Pass
     // convert light axes from world to local
     float3 localLight = mul(unity_WorldToObject, _WorldSpaceLightPos0);
     float3 localCamera = mul(unity_WorldToObject, _WorldSpaceCameraPos) - v.vertex.xyz;
-    float3 norm = normalize(v.normal);
-    float3 tang = v.tangent;
-    if (dot(norm, localCamera) >= 0) {
+    if (dot(v.normal, localCamera) > 0) {
       o.normal = -v.normal;
-      norm = -norm;
     } else {
       o.normal = v.normal;
     }
+    float3 tang = v.tangent;
     float4x4 inv = transpose(float4x4(
-      float4(tang, 0), float4(cross(norm, tang), 0),
-      float4(norm, 0), float4(0, 0, 0, 1) ));
+      float4(tang, 0), float4(cross(v.normal, tang), 0),
+      float4(v.normal, 0), float4(0, 0, 0, 1) ));
     o.light = mul(localLight, inv);
     o.camera = normalize(mul(localCamera, inv));
     return o;
@@ -85,7 +83,7 @@ Pass
     float2 texel = float2(_MainTex_TexelSize.x, _MainTex_TexelSize.y);
     fixed4 c4 = tex2D(_MainTex, i.uv);
     fixed c = c4.a;
-    if (c <= 0.5) discard; // no rendering
+    if (c <= 0.3) discard; // no rendering
 
     fixed rc;
     i.normal.z = {{normal_z}};
@@ -108,15 +106,16 @@ Pass
     if (rc < c) i.normal += float3( 1,  0,  0);
     rc = tex2D(_MainTex, i.uv + texel).a;
     if (rc < c) i.normal += float3( 1, -1,  0);
+    if (length(i.normal) == 0) discard;
 
     // calc
     float3 c3 = (1 - _Color.a) * c4.rgb + _Color.a * _Color.rgb;
     float3 inorm = normalize(i.normal);
     float3 lnorm = normalize(i.light);
     fixed3 spec = pow(max(0, dot(reflect(-lnorm, inorm), i.camera)), _SpecLevel) * _LightColor0.rgb * _Spec.rgb;
-    fixed3 diff = max(0, dot(inorm, lnorm)) * _LightColor0.rgb * c3;
-    fixed3 ambi = unity_AmbientSky.rgb * c3;
-    return fixed4(_Emit + ambi + diff + spec, c * c);
+    fixed3 diff = max(0, abs(dot(inorm, lnorm))) * _LightColor0.rgb * c3;
+    fixed3 ambi = (unity_AmbientSky.rgb + _Emit) * c3;
+    return fixed4(ambi + diff + spec, c);
   }
   ENDCG
 }

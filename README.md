@@ -3,10 +3,10 @@ It is unity package for generating thick surface.
 
 Example:
 
-![SurfaceRiser Example](https://media.giphy.com/media/3ohs4gxPZVyP9eLdbq/giphy.gif)
+![SurfaceRiser Example](https://media.giphy.com/media/3ohs4BClq9xCta8PLi/giphy.gif)
 
 # Download
-[Download UnityPackage from GitHub](./releases/download/v1/SurfaceRiser.unitypackage)
+[Download SurfaceRiser v2](./releases/download/v2/SurfaceRiser.unitypackage)
 
 # License
 [MIT License](./blob/master/MIT-LICENSE.txt)

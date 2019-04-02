@@ -1,5 +1,5 @@
 # SurfaceRiser
-It is unity package for generating thick surface.
+It is unity package for generating thick surface from flat surfaces with transparency texture.
 
 Example:
 
